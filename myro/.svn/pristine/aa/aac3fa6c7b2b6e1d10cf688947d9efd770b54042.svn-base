@@ -1,0 +1,31 @@
+Installing Myro-Java
+
+1) Install JDK (http://www.oracle.com/technetwork/java/javase/downloads/index.html)
+   MacOSX Note: JDK is on the System Installation Disc, under dev tools.  The
+   package is XCode.
+
+   Linux Note: on Linux systems openjdk is often installed, but this doesn't play
+   nicely with BlueJ, so installing Sun's JDK is necessary.
+
+
+2) Install BlueJ (http://www.bluej.org)
+   Note: On Linux systems be sure to select Sun's JDK, not openJDK, during BlueJ
+   installation.
+   
+3) Copy the .jar files and library files based on your system.  These files, 
+   along with instructions, are contained in the Binaries folder.
+
+NOTE1: Be sure your Scribbler and Fluke firmware have been updated to the most recent version.  See
+
+       http://wiki.roboteducation.org/Myro_Installation_Manual
+
+for information.
+
+NOTE2: If I haven't supplied pre-compiled binaries for the scribbler-rxtx driver (e.g., rxtxSscribblerSerial.dll,
+librxtxScribblerSerial.so, etc.) that work on your system, you can build your own from source in the
+scribbler-rxtx-devel folder.  Brief instructions for various platforms are included as README files.  Please let
+me (Doug Harms) know if my supplied binaries don't work since I'd like to include working ones in futire
+distributions.  I can be contacted at dharms@depauw.edu .
+ 
+
+

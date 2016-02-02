@@ -1,0 +1,4 @@
+To install these on a Win64 system, copy the following files to (javahome)\jre\bin
+     rxtxScribblerSerial.dll
+     jinput-dx8_64.dll
+     jinput-raw_64.dll

@@ -1,0 +1,4 @@
+To install these on a Win32 system copy the following files to (javahome)\jre\bin
+     rxtxScribblerSerial.dll
+     jinput-dx8.dll
+     jinput-raw.dll
