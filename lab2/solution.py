@@ -1,6 +1,6 @@
 from __future__ import division
 from numpy import matrix
-import math
+from math import atan2, degrees, sqrt
 
 class Node:
 	def __init__(self, name, position):
@@ -51,9 +51,6 @@ class Edge:
 
 	def __hash__(self):
 		return self.nodes.__hash__()
-
-
-
 
 class Graph:
 	def __init__(self):
@@ -140,18 +137,20 @@ class Graph:
 				self.euler_path.pop()
 		return False
 
-	def get_actionsteps(self):
-		rotation = matrix([[1, 0], [0, 1]])
-		cur_pos = (0, 0)
-		for x in xrange(0, len(self.path) - 1):
-			rotation = rotation
-			# cur_pos = self.path[x].position
-			# nex_pos = self.path[x+1].position
-			# angle = math.degrees(math.atan2(nex_pos[0] - cur_pos[0], nex_pos[1] - cur_pos[1]))
-			# distance = math.sqrt((nex_pos[0] - cur_pos[0])**2 + (nex_pos[1] - cur_pos[1])**2)
-			# self.actions.append((angle, distance))
-		return True
-
+	def get_action_steps(self):
+		points = map(lambda x: x.position, self.euler_path)
+		last_position = (0, 0)
+		action_steps = []
+		for i in xrange(0, len(points) - 1):
+			cur_position = points[i]
+			next_position = points[i + 1]
+			cur_vector = (cur_position[0] - last_position[0], cur_position[1] - last_position[1])
+			target_vector = (next_position[0] - cur_position[0], next_position[1] - cur_position[1])
+			angle = int(degrees(atan2(target_vector[1], target_vector[0])) - degrees(atan2(cur_vector[1], cur_vector[0]))) % 360
+			distance = sqrt(((cur_position[1] - next_position[1]) ** 2 + (cur_position[0] - next_position[0]) ** 2))
+			action_steps.append((angle, distance))
+			last_position = cur_position
+		return action_steps
 
 	
 
@@ -162,10 +161,9 @@ if __name__ == "__main__":
 	# graph.get_hamiltonian_path()
 	# graph.get_actionsteps()
 	graph.get_euler_path()
-	for edge in graph.euler_edge_path:
-		print edge
 	for node in graph.euler_path:
 		print node
+	print graph.get_action_steps()
 
 
 
