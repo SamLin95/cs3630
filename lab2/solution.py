@@ -1,6 +1,8 @@
 from __future__ import division
 from numpy import matrix
 from math import atan2, degrees, sqrt
+import time
+
 
 class Node:
 	def __init__(self, name, position):
@@ -139,7 +141,7 @@ class Graph:
 
 	def get_action_steps(self):
 		points = map(lambda x: x.position, self.euler_path)
-		last_position = (0, 0)
+		last_position = points[0]
 		action_steps = []
 		for i in xrange(0, len(points) - 1):
 			cur_position = points[i]
@@ -158,12 +160,20 @@ class Graph:
 if __name__ == "__main__":
 	graph = Graph()
 	graph.parse_csv('CS3630_Lab2_Map2.csv.xls')
-	# graph.get_hamiltonian_path()
-	# graph.get_actionsteps()
 	graph.get_euler_path()
-	for node in graph.euler_path:
-		print node
-	print graph.get_action_steps()
+	raw_input("press any key to start the robot:...")
+	from myro import *
+	initialize('/dev/tty.Fluke2-07E6-Fluke2')
+	steps = graph.get_action_steps()
+	print steps
+	for step in steps:
+		print 'forward by %2.2f'%(step[1])
+		print 'turnBy %2.2f'%(step[0])
+		turnBy(step[0], 'deg')
+		forward(1, step[1])
+	# for node in graph.euler_path:
+	# 	print node
+	# print graph.get_action_steps()
 
 
 
