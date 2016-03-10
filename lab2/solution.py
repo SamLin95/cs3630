@@ -159,7 +159,7 @@ class Graph:
 
 if __name__ == "__main__":
 	graph = Graph()
-	graph.parse_csv('CS3630_Lab2_Map2.csv.xls')
+	graph.parse_csv('CS3630_Lab2_Map3.csv')
 	graph.get_euler_path()
 	raw_input("press any key to start the robot:...")
 	from myro import *
@@ -170,7 +170,7 @@ if __name__ == "__main__":
 		print 'forward by %2.2f'%(step[1])
 		print 'turnBy %2.2f'%(step[0])
 		turnBy(step[0], 'deg')
-		forward(1, step[1])
+		forward(0.5, step[1])
 	# for node in graph.euler_path:
 	# 	print node
 	# print graph.get_action_steps()
