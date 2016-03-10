@@ -64,33 +64,32 @@ def propose_pairs(descripts_a, keypts_a, descripts_b, keypts_b):
             homogeneous form. 
     """
     # code here
-    N = min(len(keypts_a), len(keypts_b))
-    pair_pts_a = []
-    pair_pts_b = []
-    for i in xrange(0, N):
-        cur_des_a = descripts_a[i]
-        min_dis = cv2.norm(cur_des_a,descripts_b[0],cv2.NORM_HAMMING)
-        min_b = keypts_b[0]
-        for j in xrange(0, N):
-            cur_dis = cv2.norm(cur_des_a, descripts_b[j], cv2.NORM_HAMMING)
-            if cur_dis <= min_dis:
-                min_dis = cur_dis
-                min_b = keypts_b[j]
-        pair_pts_a.append(keypts_a[i])
-        pair_pts_b.append(min_b)
-    return pair_pts_a, pair_pts_b
+    # N = min(len(keypts_a), len(keypts_b))
     # pair_pts_a = []
     # pair_pts_b = []
-    # N = 30
-    # zipped_a = zip(descripts_a, keypts_a)
-    # zipped_b = zip(descripts_b, keypts_b)
-    # permutated = [(x, y) for x in zipped_a for y in zipped_b]
-    # distance_list = map(lambda x: (x[0][1], x[1][1], cv2.norm(x[0][0],x[1][0],cv2.NORM_HAMMING)), permutated)
-    # sorted_list = sorted(distance_list, key=lambda x: x[2])
     # for i in xrange(0, N):
-    #     pair_pts_a.append(sorted_list[0])
-    #     pair_pts_b.append(sorted_list[1])
+    #     cur_des_a = descripts_a[i]
+    #     min_dis = cv2.norm(cur_des_a,descripts_b[0],cv2.NORM_HAMMING)
+    #     min_b = keypts_b[0]
+    #     for j in xrange(0, N):
+    #         cur_dis = cv2.norm(cur_des_a, descripts_b[j], cv2.NORM_HAMMING)
+    #         if cur_dis <= min_dis:
+    #             min_dis = cur_dis
+    #             min_b = keypts_b[j]
+    #     pair_pts_a.append(keypts_a[i])
+    #     pair_pts_b.append(min_b)
     # return pair_pts_a, pair_pts_b
+    pair_pts_a = []
+    pair_pts_b = []
+    zipped_a = zip(descripts_a, keypts_a)
+    zipped_b = zip(descripts_b, keypts_b)
+    distance_product = [(cv2.norm(a[0],b[0],cv2.NORM_HAMMING), a[1], b[1]) for a in zipped_a for b in zipped_b]
+    sorted_list = sorted(distance_product, key=lambda x: x[0])
+    N = min(100, len(sorted_list))
+    for n in range(N):
+        pair_pts_a.append(sorted_list[n][1])
+        pair_pts_b.append(sorted_list[n][2])
+    return pair_pts_a, pair_pts_b
 
 
 # fill your in code here
@@ -150,8 +149,8 @@ def homog_ransac(pair_pts_a, pair_pts_b):
             homogeneous form. 
     """
     # code here
-    max_iteration = 300
-    threhold = 0.75
+    max_iteration = 1000
+    threhold = 0.80
     best_ratio = 0
     best_inliers_a = None
     best_inliers_b = None
@@ -283,18 +282,18 @@ def single_pair_combine(img_ai, img_bi):
     img_ab, best_H = img_combine_homog(img_a, img_b, length_ab, width_ab)
 
     K = cam_params_to_mat(CAM_KX, CAM_KY, CAM_CX, CAM_CY)
-    R = rot_from_homog(best_H, K)
-    assert(np.shape(R) == (3,3) and isinstance(R, np.matrix))
-    y_ang = extract_y_angle(R)
-
-    print 'H'
-    print best_H
-    print 'K'
-    print K
-    print 'R'
-    print R
-    print 'Y angle in Radians/Degrees'
-    print y_ang, np.rad2deg(y_ang)
+    # R = rot_from_homog(best_H, K)q
+    # assert(np.shape(R) == (3,3) and isinstance(R, np.matrix))
+    # y_ang = extract_y_angle(R)
+    #
+    # print 'H'
+    # print best_H
+    # print 'K'
+    # print K
+    # print 'R'
+    # print R
+    # print 'Y angle in Radians/Degrees'
+    # print y_ang, np.rad2deg(y_ang)
 
     cv2.imshow('Image A', img_a)
     cv2.imshow('Image B', img_b)
