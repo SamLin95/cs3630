@@ -64,23 +64,9 @@ def propose_pairs(descripts_a, keypts_a, descripts_b, keypts_b):
             homogeneous form. 
     """
     # code here
-    # N = min(len(keypts_a), len(keypts_b))
-    # pair_pts_a = []
-    # pair_pts_b = []
-    # for i in xrange(0, N):
-    #     cur_des_a = descripts_a[i]
-    #     min_dis = cv2.norm(cur_des_a,descripts_b[0],cv2.NORM_HAMMING)
-    #     min_b = keypts_b[0]
-    #     for j in xrange(0, N):
-    #         cur_dis = cv2.norm(cur_des_a, descripts_b[j], cv2.NORM_HAMMING)
-    #         if cur_dis <= min_dis:
-    #             min_dis = cur_dis
-    #             min_b = keypts_b[j]
-    #     pair_pts_a.append(keypts_a[i])
-    #     pair_pts_b.append(min_b)
-    # return pair_pts_a, pair_pts_b
     pair_pts_a = []
     pair_pts_b = []
+    distances = []
     zipped_a = zip(descripts_a, keypts_a)
     zipped_b = zip(descripts_b, keypts_b)
     distance_product = [(cv2.norm(a[0],b[0],cv2.NORM_HAMMING), a[1], b[1]) for a in zipped_a for b in zipped_b]
@@ -89,7 +75,9 @@ def propose_pairs(descripts_a, keypts_a, descripts_b, keypts_b):
     for n in range(N):
         pair_pts_a.append(sorted_list[n][1])
         pair_pts_b.append(sorted_list[n][2])
+        distances.append(sorted_list[n][0])
     return pair_pts_a, pair_pts_b
+
 
 
 # fill your in code here
@@ -114,14 +102,25 @@ def homog_dlt(ptsa, ptsb):
     [u v 1 0 0 0 -uu' -vu' -u'...
      0 0 0 u v 1 -uv' -vv' -v']
     """
+    ptsa_np = np.array([[ptsa[i].item(0) for i in range(0, len(ptsa))], [ptsa[i].item(1) for i in range(0, len(ptsa))]])
+    ptsb_np = np.array([[ptsb[i].item(0) for i in range(0, len(ptsb))], [ptsb[i].item(1) for i in range(0, len(ptsb))]])
+    ptsa_mean = np.mean(ptsa_np, axis=1)
+    ptsb_mean = np.mean(ptsb_np, axis=1)
+    scale_a = 1/np.sum(np.std(np.transpose(ptsa_np) - ptsa_mean, axis = 0, ddof = 1))
+    scale_b = 1/np.sum(np.std(np.transpose(ptsb_np) - ptsb_mean, axis = 0, ddof = 1))
+    norm_a = np.array([[1, 0, -ptsa_mean[0]], [0, 1, -ptsa_mean[1]], [0,0,1/scale_a]])
+    norm_a = np.matrix(scale_a * norm_a)
+    norm_b = np.array([[1, 0, -ptsb_mean[0]], [0, 1, -ptsb_mean[1]], [0,0,1/scale_b]])
+    norm_b = np.matrix(scale_b * norm_b)
+
     A = np.zeros((len(ptsa) * 2, 9))
     for i in xrange(0, len(ptsa)):
-        pta = ptsa[i]
-        ptb = ptsb[i]
+        pta = norm_a * ptsa[i]
+        ptb = norm_b * ptsb[i]
         u = pta[0, 0] / pta[2, 0]
         v = pta[1, 0] / pta[2, 0]
         w = ptb[2, 0]
-        u_ = ptb[0, 0] / w 
+        u_ = ptb[0, 0] / w
         v_ = ptb[1, 0] / w
         A[2 * i, :] = [u, v, 1, 0, 0, 0, -u * u_, -v * u_, -u_]
         A[2 * i + 1, :] = [0, 0, 0, u, v, 1, -u * v_, -v * v_, -v_]
@@ -130,7 +129,10 @@ def homog_dlt(ptsa, ptsb):
     V = VT.T
     h = V[:, -1]
     H = np.mat(h).reshape((3, 3))
+    H = norm_b.I * H * norm_a
+    H = H / H[-1, -1]
     return H
+
 
 # fill your in code here
 def homog_ransac(pair_pts_a, pair_pts_b):
@@ -149,15 +151,18 @@ def homog_ransac(pair_pts_a, pair_pts_b):
             homogeneous form. 
     """
     # code here
-    max_iteration = 1000
+    max_iteration = 10000
     threhold = 0.80
     best_ratio = 0
     best_inliers_a = None
     best_inliers_b = None
     best_H = None
     for i in xrange(0, max_iteration):
-        sample_a = random.sample(pair_pts_a, 4)
-        sample_b = random.sample(pair_pts_b, 4)
+        # sample_a = random.sample(pair_pts_a, 4)
+        # sample_b = random.sample(pair_pts_b, 4)
+        sample_indx = np.random.choice(len(pair_pts_a), 4, replace=False).tolist()
+        sample_a = [pair_pts_a[i] for i in sample_indx]
+        sample_b = [pair_pts_b[i] for i in sample_indx]
         H = homog_dlt(sample_a, sample_b)
         inliers_a, inliers_b = calculate_inliers(pair_pts_a, pair_pts_b, H)
         ratio = len(inliers_a) / len(pair_pts_a)
@@ -168,7 +173,8 @@ def homog_ransac(pair_pts_a, pair_pts_b):
             best_H = H
             best_inliers_a = inliers_a
             best_inliers_b = inliers_b
-    print "best ratio is %2.2f"%(ratio)
+    print "best ratio is %2.2f"%(best_ratio)
+    print "number of inliers are %2.2f"%(len(best_inliers_a))
     return best_H, best_inliers_a, best_inliers_b
 
 
@@ -181,8 +187,8 @@ def calculate_inliers(pair_pts_a, pair_pts_b, H):
         ptb = pair_pts_b[i]
         homo_ptb = H * pta
         homo_ptb = homo_ptb / homo_ptb[2, 0]
-        dist = distance.euclidean(ptb, homo_ptb)
-        if dist < 100:
+        dist = np.linalg.norm(homo_ptb - ptb)
+        if dist <= 15:
             inliers_a.append(pta)
             inliers_b.append(ptb)
     return inliers_a, inliers_b
@@ -229,7 +235,11 @@ def img_combine_homog(img_a, img_b, length_ab, width_ab):
     best_H, best_inliers_a, best_inliers_b = homog_ransac(pair_pts_a, pair_pts_b)
     assert(np.shape(best_H) == (3,3) and isinstance(best_H, np.matrix))
 
+    # cv2.drawKeypoints(img_a, best_inliers_a, (255, 0, 0), flags=0)
+    # cv2.drawKeypoints(img_b, best_inliers_b, (255, 0, 0), flags=0)
+
     fixed_H = homog_dlt(best_inliers_a, best_inliers_b)
+    #fixed_H = best_H
     assert(np.shape(fixed_H) == (3,3) and isinstance(fixed_H, np.matrix))
 
     img_ab = perspect_combine(img_a, img_b, fixed_H, length_ab, width_ab)
@@ -248,8 +258,9 @@ def rot_from_homog(H, K):
         R (np.matrix of shape 3x3): Rotation matrix from frame a to frame b
     """
     # code here
-    pass
-    #return R
+    R = np.dot(np.transpose(K), H)
+    R = np.dot(R, K)
+    return R
 
 
 # fill your in code here
@@ -264,8 +275,8 @@ def extract_y_angle(R):
         y_ang (float): angle in radians
     """
     # code here
-    pass
-    #return y_ang
+    y_ang = np.arctan(R.item(3) / R.item(0))
+    return y_ang
 
 
 
@@ -282,18 +293,18 @@ def single_pair_combine(img_ai, img_bi):
     img_ab, best_H = img_combine_homog(img_a, img_b, length_ab, width_ab)
 
     K = cam_params_to_mat(CAM_KX, CAM_KY, CAM_CX, CAM_CY)
-    # R = rot_from_homog(best_H, K)q
-    # assert(np.shape(R) == (3,3) and isinstance(R, np.matrix))
-    # y_ang = extract_y_angle(R)
-    #
-    # print 'H'
-    # print best_H
-    # print 'K'
-    # print K
-    # print 'R'
-    # print R
-    # print 'Y angle in Radians/Degrees'
-    # print y_ang, np.rad2deg(y_ang)
+    R = rot_from_homog(best_H, K)
+    assert(np.shape(R) == (3,3) and isinstance(R, np.matrix))
+    y_ang = extract_y_angle(R)
+
+    print 'H'
+    print best_H
+    print 'K'
+    print K
+    print 'R'
+    print R
+    print 'Y angle in Radians/Degrees'
+    print y_ang, np.rad2deg(y_ang)
 
     cv2.imshow('Image A', img_a)
     cv2.imshow('Image B', img_b)
@@ -302,10 +313,10 @@ def single_pair_combine(img_ai, img_bi):
 
 # DO NOT MODIFY multi_pair_combine
 def multi_pair_combine(beg_i, n_imgs):
-    img_ab = cv2.imread('image_%02d.png'%beg_i)
+    img_ab = cv2.imread('imageSet1/image_%02d.png'%beg_i)
     img_ab = img_ab[::2,::2,:]
     for i in range(beg_i+1, beg_i+n_imgs):
-        img_b = cv2.imread('image_%02d.png'%i)
+        img_b = cv2.imread('imageSet1/image_%02d.png'%i)
 
         # decimate by 2
         img_b = img_b[::2,::2,:]
@@ -319,10 +330,10 @@ def multi_pair_combine(beg_i, n_imgs):
 
 # DO NOT MODIFY main
 def main():
-    if True:
+    if False:
         single_pair_combine(0, 1)
 
-    if False:
+    if True:
         multi_pair_combine(0, 5)
 
 if __name__ == "__main__":
