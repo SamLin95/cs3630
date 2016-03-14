@@ -4,8 +4,6 @@ sys.path.append('/usr/local/Cellar/opencv/2.4.11_1/lib/python2.7/site-packages/'
 from scipy.spatial import distance
 import numpy as np
 import cv2
-import random
-import itertools
 
 CAM_KX = 720.
 CAM_KY = CAM_KX
@@ -124,7 +122,6 @@ def homog_dlt(ptsa, ptsb):
         v_ = ptb[1, 0] / w
         A[2 * i, :] = [u, v, 1, 0, 0, 0, -u * u_, -v * u_, -u_]
         A[2 * i + 1, :] = [0, 0, 0, u, v, 1, -u * v_, -v * v_, -v_]
-
     U, S, VT = np.linalg.svd(A)
     V = VT.T
     h = V[:, -1]
@@ -163,7 +160,10 @@ def homog_ransac(pair_pts_a, pair_pts_b):
         sample_indx = np.random.choice(len(pair_pts_a), 4, replace=False).tolist()
         sample_a = [pair_pts_a[i] for i in sample_indx]
         sample_b = [pair_pts_b[i] for i in sample_indx]
-        H = homog_dlt(sample_a, sample_b)
+        try:
+            H = homog_dlt(sample_a, sample_b)
+        except np.linalg.linalg.LinAlgError:
+            continue
         inliers_a, inliers_b = calculate_inliers(pair_pts_a, pair_pts_b, H)
         ratio = len(inliers_a) / len(pair_pts_a)
         if ratio >= threhold:
@@ -258,8 +258,7 @@ def rot_from_homog(H, K):
         R (np.matrix of shape 3x3): Rotation matrix from frame a to frame b
     """
     # code here
-    R = np.dot(np.transpose(K), H)
-    R = np.dot(R, K)
+    R = K.I * H * K
     return R
 
 
@@ -275,8 +274,8 @@ def extract_y_angle(R):
         y_ang (float): angle in radians
     """
     # code here
-    y_ang = np.arctan(R.item(3) / R.item(0))
-    return y_ang
+    # y_ang = np.arctan(R.item(3) / R.item(0))
+    return abs(np.arctan(-R.item(2) / R.item(8)))
 
 
 
@@ -314,10 +313,10 @@ def single_pair_combine(img_ai, img_bi):
 # DO NOT MODIFY multi_pair_combine
 def multi_pair_combine(beg_i, n_imgs):
     #print 'ImageSet2/image2_%02d.png'%beg_i
-    img_ab = cv2.imread('ImageSet2/image2_%02d.png'%(beg_i + 1))
+    img_ab = cv2.imread('ImageSet1/image_%02d.png'%(beg_i))
     img_ab = img_ab[::2,::2,:]
     for i in range(beg_i+1, beg_i+n_imgs):
-        img_b = cv2.imread('ImageSet2/image2_%02d.png'%i)
+        img_b = cv2.imread('ImageSet1/image_%02d.png'%i)
 
         # decimate by 2
         img_b = img_b[::2,::2,:]

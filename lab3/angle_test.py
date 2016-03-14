@@ -1,6 +1,7 @@
+from __future__ import division
 from mosaic import *
 from matplotlib import pyplot as plt
-#from myro import *
+from myro import *
 
 
 CAM_KX = 720.
@@ -15,6 +16,7 @@ def get_y_angles(folder):
     x = [i*5 for i in xrange(1, 9)]
     y = []
     for i in xrange(1, 10):
+        print "processing image of degree %d"%(i*5)
         img_a = cv2.imread('%s/%d_degree_1.png'%(folder, i*5))
         img_b = cv2.imread('%s/%d_degree_2.png'%(folder, i*5))
 
@@ -22,16 +24,23 @@ def get_y_angles(folder):
         img_b = img_b[::2,::2,:]
 
         length_ab, width_ab = 1280, 720
-        img_ab, best_H = img_combine_homog(img_a, img_b, length_ab, width_ab)
+        try:
+            img_ab, best_H = img_combine_homog(img_a, img_b, length_ab, width_ab)
+        except np.linalg.linalg.LinAlgError:
+            print "failed to converge"
+            y.append(0)
+            continue
 
         K = cam_params_to_mat(CAM_KX, CAM_KY, CAM_CX, CAM_CY)
         R = rot_from_homog(best_H, K)
         assert(np.shape(R) == (3,3) and isinstance(R, np.matrix))
         y_ang = extract_y_angle(R)
         y.append(y_ang)
-        cv2.imshow('Combined Image', img_ab)
+        #cv2.imshow('Combined Image', img_ab)
 
     y = map(lambda x: x*57.2958, y)
+    y_mean = sum(y) / len(y)
+    y = map(lambda x: y_mean if x == 0 else x, y)
     print 'calculated ys are: ', y
     return y
 
@@ -46,13 +55,6 @@ def get_pictures():
         savePicture(img1, '%s/%d_degree_1.png'%(folder_name, i*5))
         savePicture(img2, '%s/%d_degree_2.png'%(folder_name, i*5))
 
-def get_plot():
-    folders  = ['photo%d'%(i) for i in xrange(0, 5)]
-    x = [i*5 for i in xrange(1, 10)]
-    for folder in folders:
-        y = get_y_angles(folder)
-        plt.plot(x, y)
-    plt.show()
 
 
 if __name__ == '__main__':
