@@ -47,7 +47,7 @@ def get_pictures():
         savePicture(img2, '%s/%d_degree_2.png'%(folder_name, i*5))
 
 def get_plot():
-    folders  = ['photo%d'%(i) for i in xrange(2, 3)]
+    folders  = ['photo%d'%(i) for i in xrange(0, 5)]
     x = [i*5 for i in xrange(1, 10)]
     for folder in folders:
         y = get_y_angles(folder)
