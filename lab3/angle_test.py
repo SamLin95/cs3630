@@ -37,7 +37,7 @@ def get_y_angles(folder):
 
 def get_pictures():
     initialize('/dev/tty.Fluke2-07E6-Fluke2')
-    folder_name = raw_input("ender folder name: ")
+    folder_name = raw_input("enter folder name: ")
     x = [i*10 for i in xrange(1, 6)]
     for i in xrange(1, 10):
         img1 = takePicture('gray')
