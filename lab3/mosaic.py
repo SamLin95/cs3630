@@ -313,10 +313,10 @@ def single_pair_combine(img_ai, img_bi):
 # DO NOT MODIFY multi_pair_combine
 def multi_pair_combine(beg_i, n_imgs):
     #print 'ImageSet2/image2_%02d.png'%beg_i
-    img_ab = cv2.imread('ImageSet1/image_%02d.png'%(beg_i))
+    img_ab = cv2.imread('ImageSet2/image2_%02d.png'%(beg_i))
     img_ab = img_ab[::2,::2,:]
     for i in range(beg_i+1, beg_i+n_imgs):
-        img_b = cv2.imread('ImageSet1/image_%02d.png'%i)
+        img_b = cv2.imread('ImageSet2/image2_%02d.png'%i)
 
         # decimate by 2
         img_b = img_b[::2,::2,:]
@@ -335,7 +335,7 @@ def __main():
         single_pair_combine(0, 1)
 
     if True:
-        multi_pair_combine(0, 5)
+        multi_pair_combine(1, 5)
 
 
 
